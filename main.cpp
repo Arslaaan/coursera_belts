@@ -10,66 +10,105 @@
 
 using namespace std;
 
-struct Student {
-    string name;
-    string surname;
-    int day;
-    int month;
-    int year;
+int NOD(int p, int q) {
+    p = abs(p);
+    q = abs(q);
+    while (p != 0 && q != 0) {
+        if (p > q) {
+            p = p % q;
+        } else {
+            q = q % p;
+        }
+    }
+    return p + q;
+}
+
+class Rational {
+    int p;
+    int q;
+public:
+    Rational() {
+        p = 0;
+        q = 1;
+    }
+
+    Rational(int numerator, int denominator) {
+        p = numerator;
+        q = denominator;
+        if (p == 0) {
+            q = 1;
+        } else if ((double) p / q < 0) {
+            p = -abs(p);
+            q = abs(q);
+        } else {
+            p = abs(p);
+            q = abs(q);
+        }
+        int nod = NOD(p, q);
+        while (nod != 1) {
+            p /= nod;
+            q /= nod;
+            nod = NOD(p, q);
+        }
+    }
+
+    int Numerator() const {
+        return p;
+    }
+    int Denominator() const {
+        return q;
+    }
 };
 
-void PrintError() {
-    cout << "bad request" << endl;
-}
-
-bool CorrectName(const string &name) {
-    return name.size() >= 1 && name.size() <= 15;
-}
-
-bool CorrectDate(const int &date) {
-    return date >= 0 && date <= 1000000000;
-}
-
 int main() {
-    vector<Student> students;
-    int n, m;
-    cin >> n;
-    if (n < 0 || n > 10000) {
-        PrintError();
-        return 0;
-    }
-    for (int i = 0; i < n; ++i) {
-        string name, surname;
-        int day, month, year;
-        cin >> name >> surname >> day >> month >> year;
-        if (CorrectName(name) && CorrectName(surname) &&
-            CorrectDate(day) && CorrectDate(month) && CorrectDate(year)) {
-            students.push_back({name, surname, day, month, year});
-        } else {
-            PrintError();
+    {
+        const Rational r(3, 10);
+        if (r.Numerator() != 3 || r.Denominator() != 10) {
+            cout << "Rational(3, 10) != 3/10" << endl;
+            return 1;
         }
     }
-    cin >> m;
-    if (m < 0 || m > 10000) {
-        PrintError();
-        return 0;
-    }
-    for (int i = 0; i < m; ++i) {
-        string request;
-        int number;
-        cin >> request >> number;
-        if (CorrectDate(number) && CorrectName(request) && number >= 1 && number <= n) {
-            if (request == "name") {
-                cout << students[number - 1].name << " " << students[number - 1].surname << endl;
-            } else if (request == "date") {
-                Student student = students[number - 1];
-                cout << student.day << "." << student.month << "." << student.year << endl;
-            } else {
-                PrintError();
-            }
-        } else {
-            PrintError();
+
+    {
+        const Rational r(8, 12);
+        if (r.Numerator() != 2 || r.Denominator() != 3) {
+            cout << "Rational(8, 12) != 2/3" << endl;
+            return 2;
         }
     }
+
+    {
+        const Rational r(-4, 6);
+        if (r.Numerator() != -2 || r.Denominator() != 3) {
+            cout << "Rational(-4, 6) != -2/3" << endl;
+            return 3;
+        }
+    }
+
+    {
+        const Rational r(4, -6);
+        if (r.Numerator() != -2 || r.Denominator() != 3) {
+            cout << "Rational(4, -6) != -2/3" << endl;
+            return 3;
+        }
+    }
+
+    {
+        const Rational r(0, 15);
+        if (r.Numerator() != 0 || r.Denominator() != 1) {
+            cout << "Rational(0, 15) != 0/1" << endl;
+            return 4;
+        }
+    }
+
+    {
+        const Rational defaultConstructed;
+        if (defaultConstructed.Numerator() != 0 || defaultConstructed.Denominator() != 1) {
+            cout << "Rational() != 0/1" << endl;
+            return 5;
+        }
+    }
+
+    cout << "OK" << endl;
     return 0;
 }
