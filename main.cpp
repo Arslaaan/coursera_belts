@@ -1,12 +1,6 @@
 #include <iostream>
 #include <string>
-#include <cmath>
-#include <vector>
-#include <algorithm>
-#include <map>
-#include <set>
-#include <fstream>
-#include <iomanip>
+#include <sstream>
 
 using namespace std;
 
@@ -59,8 +53,6 @@ public:
     int Denominator() const {
         return q;
     }
-
-    friend ostream &operator<<(ostream &os, const Rational &rational);
 };
 
 bool operator==(const Rational &r1, const Rational &r2) {
@@ -85,64 +77,26 @@ Rational operator/(const Rational &r1, const Rational &r2) {
     return Rational(r1.Numerator() * r2.Denominator(), r1.Denominator() * r2.Numerator());
 }
 
-bool operator<(const Rational &r1, const Rational &r2) {
-    Rational r = r1 / r2;
-    return r.Numerator() / r.Denominator() < 1.0;
+bool operator < (const Rational& lhs, const Rational& rhs) {
+    return (lhs - rhs).Numerator() < 0;
 }
 
 ostream &operator<<(ostream &os, const Rational &rational) {
-    os << rational.p << "/" << rational.q;
+    os << rational.Numerator() << "/" << rational.Denominator();
     return os;
 }
 
-istream &operator>>(istream &is, Rational &rational) {
-    int p, q;
-    if (is) {
-        is >> p;
-        if (is) {
-            string d;
-            is >> d;
-            if (d[0] == '/' && d.size() > 1) {
-                stringstream ss(d.substr(1, d.size() - 1));
-                ss >> q;
-                rational = Rational(p, q);
-            }
-        }
+istream &operator>>(istream &is, Rational &r) {
+    int n, d;
+    char c;
+    is >> n >> c >> d;
+    if (is && c == '/') {
+        r = Rational(n, d);
     }
     return is;
 }
 
 int main() {
-    {
-        const set<Rational> rs = {{1, 2}, {1, 25}, {3, 4}, {3, 4}, {1, 2}};
-        if (rs.size() != 3) {
-            cout << "Wrong amount of items in the set" << endl;
-            return 1;
-        }
 
-        vector<Rational> v;
-        for (auto x : rs) {
-            v.push_back(x);
-        }
-        if (v != vector<Rational>{{1, 25}, {1, 2}, {3, 4}}) {
-            cout << "Rationals comparison works incorrectly" << endl;
-            return 2;
-        }
-    }
-
-    {
-        map<Rational, int> count;
-        ++count[{1, 2}];
-        ++count[{1, 2}];
-
-        ++count[{2, 3}];
-
-        if (count.size() != 2) {
-            cout << "Wrong amount of items in the map" << endl;
-            return 3;
-        }
-    }
-
-    cout << "OK" << endl;
     return 0;
 }
