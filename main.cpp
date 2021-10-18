@@ -29,6 +29,9 @@ public:
     Rational(int numerator, int denominator) {
         p = numerator;
         q = denominator;
+        if (q == 0) {
+            throw invalid_argument("invalid argument");
+        }
         if (p == 0) {
             q = 1;
         } else if ((double) p / q < 0) {
@@ -74,6 +77,9 @@ Rational operator*(const Rational &r1, const Rational &r2) {
 }
 
 Rational operator/(const Rational &r1, const Rational &r2) {
+    if (r1.Denominator() * r2.Numerator() == 0) {
+        throw domain_error("domain error");
+    }
     return Rational(r1.Numerator() * r2.Denominator(), r1.Denominator() * r2.Numerator());
 }
 
@@ -97,6 +103,20 @@ istream &operator>>(istream &is, Rational &r) {
 }
 
 int main() {
+    try {
+        Rational r(1, 0);
+        cout << "Doesn't throw in case of zero denominator" << endl;
+        return 1;
+    } catch (invalid_argument&) {
+    }
 
+    try {
+        auto x = Rational(1, 2) / Rational(0, 1);
+        cout << "Doesn't throw in case of division by zero" << endl;
+        return 2;
+    } catch (domain_error&) {
+    }
+
+    cout << "OK" << endl;
     return 0;
 }
