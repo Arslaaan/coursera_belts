@@ -1,161 +1,126 @@
 #include <iostream>
-#include <string>
-#include <sstream>
+#include <stdexcept>
 #include <vector>
-#include <map>
-#include <set>
-#include <iomanip>
 
 using namespace std;
 
-struct Date {
-    Date(int day, int month, int year) {
-        this->day = day;
-        this->month = month;
-        this->year = year;
-    }
-
-    int day;
-    int month;
-    int year;
-};
-
-ostream &operator<<(ostream &out, const Date &date) {
-    out << setw(4) << setfill('0') << date.year << "-";
-    out << setw(2) << setfill('0') << date.month << "-";
-    out << setw(2) << setfill('0') << date.day;
-    return out;
-}
-
-class History {
-    map<Date, set<string>> events;
-
+class Matrix {
+    vector<vector<int>> data;
 public:
-    void add(const Date &date, const string &s) {
-        events[date].insert(s);
+    Matrix() {
+        vector<int> emptyRow(0);
+        data.push_back(emptyRow);
     }
 
-    void del(const Date &date, const string &s) {
-        if (events.count(date) > 0) {
-            set<string> &current_events = events[date];
-            if (current_events.count(s) > 0) {
-                current_events.erase(s);
-                cout << "Deleted successfully" << endl;
-                return;
-            }
+    Matrix(const int rowSize, const int colSize) {
+        if (rowSize < 0 || colSize < 0) {
+            throw out_of_range("matrix constructor");
         }
-        cout << "Event not found" << endl;
-    }
-
-    void del(const Date &date) {
-        if (events.count(date) > 0) {
-            set<string> &current_events = events[date];
-            if (!current_events.empty()) {
-                cout << "Deleted " << current_events.size() << " events" << endl;
-                current_events.clear();
-                return;
-            }
-        }
-        cout << "Deleted 0 events" << endl;
-    }
-
-    void find(const Date &date) {
-        for (const auto &e: events[date]) {
-            cout << e << endl;
+        for (int i = 0; i < rowSize; ++i) {
+            vector<int> row(colSize);
+            data.push_back(row);
         }
     }
 
-    void print() {
-        for (const auto &event : events) {
-            for (const auto &set_elem: event.second) {
-                cout << event.first << " " << set_elem << endl;
-            }
+    void Reset(const int rowSize, const int colSize) {
+        if (rowSize < 0 || colSize < 0) {
+            throw out_of_range("reset");
         }
+        for (auto &row: data) {
+            row.clear();
+        }
+        data.clear();
+        for (int i = 0; i < rowSize; ++i) {
+            vector<int> row(colSize);
+            data.push_back(row);
+        }
+    }
+
+    int At(const int i, const int j) const {
+        if (i < 0 || i >= GetNumRows() || j < 0 || j >= GetNumColumns()) {
+            throw out_of_range("at");
+        }
+        return data[i][j];
+    }
+
+    int &At(const int i, const int j) {
+        if (i < 0 || i >= GetNumRows() || j < 0 || j >= GetNumColumns()) {
+            throw out_of_range(to_string(i) + " " + to_string(j));
+        }
+        return data[i][j];
+    }
+
+    int GetNumColumns() const {
+        if (!data.empty()) {
+            return data[0].size();
+        } else {
+            return 0;
+        }
+    }
+
+    int GetNumRows() const {
+        if (GetNumColumns() == 0) {
+            return 0;
+        }
+        return data.size();
     }
 };
 
-void checkDate(const Date &date) {
-    if (date.month >= 1 && date.month <= 12) {
-        if (date.day >= 1 && date.day <= 31) {
-            //nothing
-        } else {
-            cout << "Day value is invalid: " << date.day << endl;
-            throw runtime_error("");
+istream &operator>>(istream &in, Matrix &matrix) {
+    int row_size, col_size;
+    in >> row_size >> col_size;
+    Matrix newMatrix(row_size, col_size);
+    for (int i = 0; i < row_size; ++i) {
+        for (int j = 0; j < col_size; ++j) {
+            in >> newMatrix.At(i, j);
         }
-    } else {
-        cout << "Month value is invalid: " << date.month << endl;
-        throw runtime_error("");
     }
-}
-
-istream &operator>>(istream &in, Date &date) {
-    string full;
-    in >> full;
-    stringstream ss(full);
-
-    int y, m, d;
-    char def1, def2;
-    ss >> y >> def1 >> m >> def2 >> d;
-    if (ss && def1 == '-' && def2 == '-' && d >= 0 && m >= 0 && y >= 0 && ss.eof()) {
-        date = Date(d, m, y);
-        checkDate(date);
-    } else {
-        cout << "Wrong date format: " << full << endl;
-        throw runtime_error("");
+    if (in) {
+        matrix = newMatrix;
     }
     return in;
 }
 
-bool operator<(const Date &date1, const Date &date2) {
-    if (date1.year == date2.year) {
-        if (date1.month == date2.month) {
-            return date1.day < date2.day;
-        } else {
-            return date1.month < date2.month;
+ostream &operator<<(ostream &out, const Matrix &matrix) {
+    out << matrix.GetNumRows() << " " << matrix.GetNumColumns() << endl;
+    for (int i = 0; i < matrix.GetNumRows(); ++i) {
+        for (int j = 0; j < matrix.GetNumColumns(); ++j) {
+            out << matrix.At(i, j) << " ";
         }
-    } else {
-        return date1.year < date2.year;
+        out << endl;
     }
+    return out;
 }
 
-bool operator==(const Date &date1, const Date &date2) {
-    return date1.year == date2.year && date1.month == date2.month && date1.day == date2.day;
+bool operator==(const Matrix &m1, const Matrix &m2) {
+    if (m1.GetNumRows() != m2.GetNumRows() || m1.GetNumColumns() != m2.GetNumColumns()) {
+        return false;
+    }
+    for (int i = 0; i < m1.GetNumRows(); ++i) {
+        for (int j = 0; j < m1.GetNumColumns(); ++j) {
+            if (m1.At(i, j) != m2.At(i, j)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+Matrix operator+(const Matrix &m1, const Matrix &m2) {
+    if (m1.GetNumRows() != m2.GetNumRows() || m1.GetNumColumns() != m2.GetNumColumns()) {
+        throw invalid_argument("");
+    }
+    Matrix result(m1.GetNumRows(), m1.GetNumColumns());
+    for (int i = 0; i < m1.GetNumRows(); ++i) {
+        for (int j = 0; j < m1.GetNumColumns(); ++j) {
+            result.At(i, j) = m1.At(i, j) + m2.At(i, j);
+        }
+    }
+    return result;
 }
 
 int main() {
-    History history;
-    string line;
+    Matrix one;
 
-    while (getline(cin, line)) {
-        try {
-            string cmd, event;
-            stringstream lineStream = stringstream(line);
-            Date date(0, 0, 0);
-            lineStream >> cmd;
-            if (cmd == "Add") {
-                lineStream >> date >> event;
-                history.add(date, event);
-            } else if (cmd == "Del") {
-                lineStream >> date;
-                if (lineStream && !lineStream.eof()) {
-                    lineStream >> event;
-                    history.del(date, event);
-                } else {
-                    history.del(date);
-                }
-            } else if (cmd == "Find") {
-                lineStream >> date;
-                history.find(date);
-            } else if (cmd == "Print") {
-                history.print();
-            } else if (!cmd.empty()) {
-                cout << "Unknown command: " << cmd << endl;
-            }
-
-        }
-        catch (exception &ex) {
-
-        }
-    }
     return 0;
 }
