@@ -1,177 +1,124 @@
-#include <string>
-#include <iostream>
-#include <cassert>
 #include <vector>
-#include <map>
+#include <set>
+#include <algorithm>
+#include <iostream>
+#include <numeric>
+#include <sstream>
 
 using namespace std;
 
-enum class QueryType {
-    NewBus,
-    BusesForStop,
-    StopsForBus,
-    AllBuses
-};
-
-struct Query {
-    QueryType type;
-    string bus;
-    string stop;
-    vector<string> stops;
-};
-
-istream& operator >> (istream& is, Query& q) {
-    // Реализуйте эту функцию
-    string operation_code;
-    is >> operation_code;
-    if (operation_code == "NEW_BUS") {
-        q.type = QueryType::NewBus;
-        is >> q.bus;
-
-        int stop_count;
-        is >> stop_count;
-        q.stops.resize(stop_count);
-        for (int i = 0; i < stop_count; ++i) {
-            is >> q.stops[i];
-        }
-    } else if (operation_code == "BUSES_FOR_STOP") {
-        q.type = QueryType::BusesForStop;
-        is >> q.stop;
-    } else if (operation_code == "STOPS_FOR_BUS") {
-        q.type = QueryType::StopsForBus;
-        is >> q.bus;
-    } else if (operation_code == "ALL_BUSES") {
-        q.type = QueryType::AllBuses;
+template<typename T>
+void print(const vector<T> &v) {
+    for (size_t i = 0; i < v.size(); ++i) {
+        cout << v[i] << " ";
     }
-    return is;
+    cout << endl;
 }
 
-struct BusesForStopResponse {
-    // Наполните полями эту структуру
-    vector<string> buses;
-};
-
-ostream& operator << (ostream& os, const BusesForStopResponse& r) {
-    // Реализуйте эту функцию
-    if (r.buses.empty()) {
-        os << "No stop";
+pair<string, string> SplitTwoStrict(string s, string delimiter) {
+    const size_t pos = s.find(delimiter);
+    if (pos == s.npos) {
+        return {s, ""};
     } else {
-        for (const string& bus : r.buses) {
-            os << bus << " ";
-        }
+        return {s.substr(0, pos), s.substr(pos + delimiter.length())};
     }
-    return os;
 }
 
-struct StopsForBusResponse {
-    // Наполните полями эту структуру
-    string bus;
-    vector<string> stops;
-    map<string, vector<string>> busesForStop; // stop -> bus1, bus2 ...
-};
-
-ostream& operator << (ostream& os, const StopsForBusResponse& r) {
-    // Реализуйте эту функцию
-    if (r.bus.empty()) {
-        os << "No bus";
-    } else {
-        for (const string& stop : r.stops) {
-            os << "Stop " << stop << ": ";
-            if (r.busesForStop.at(stop).size() == 1) {
-                os << "no interchange" << endl;
-            } else {
-                for (const string& other_bus : r.busesForStop.at(stop)) {
-                    if (r.bus != other_bus) {
-                        os << other_bus << " ";
-                    }
-                }
-                os << endl;
-            }
-        }
-    }
-    return os;
+pair<string, string> SplitTwo(string s, string delimiter) {
+    const auto [lhs, rhs] = SplitTwoStrict(s, delimiter);
+    return {lhs, rhs};
 }
 
-struct AllBusesResponse {
-    // Наполните полями эту структуру
-    vector<StopsForBusResponse> stopsForBuses;
-};
-
-ostream& operator << (ostream& os, const AllBusesResponse& r) {
-    // Реализуйте эту функцию
-    if (r.stopsForBuses.empty()) {
-        os << "No buses";
-    } else {
-        for (const auto& stops_for_bus : r.stopsForBuses) {
-            os << "Bus " << stops_for_bus.bus << ": ";
-            for (const string& stop : stops_for_bus.stops) {
-                os << stop << " ";
-            }
-            os << endl; // todo тут возможно лишний эндл
-        }
-    }
-    return os;
+string ReadToken(string& s, string delimiter = " ") {
+    const auto [lhs, rhs] = SplitTwo(s, delimiter);
+    s = rhs;
+    return lhs;
 }
 
-class BusManager {
-    map<string, vector<string>> stopsForBus;
-    map<string, vector<string>> busesForStop;
+int ConvertToInt(string str) {
+    size_t pos;
+    const int result = stoi(string(str), &pos);
+    if (pos != str.length()) {
+        stringstream error;
+        error << "string " << str << " contains " << (str.length() - pos) << " trailing chars";
+        throw invalid_argument(error.str());
+    }
+    return result;
+}
+
+class Date {
 public:
-    void AddBus(const string& bus, const vector<string>& stops) {
-        // Реализуйте этот метод
-        stopsForBus.insert({bus, stops});
-        for (const string& stop: stops) {
-            busesForStop[stop].push_back(bus);
-        }
+    static Date FromString(string str) {
+        const int year = ConvertToInt(ReadToken(str, "-"));
+        const int month = ConvertToInt(ReadToken(str, "-"));
+        const int day = ConvertToInt(str);
+        return {year, month, day};
     }
 
-    BusesForStopResponse GetBusesForStop(const string& stop) const {
-        // Реализуйте этот метод
-        if (busesForStop.count(stop) == 0) {return {};}
-        return {busesForStop.at(stop)};
+    // Weird legacy, can't wait for chrono::year_month_day
+    time_t AsTimestamp() const {
+        tm t;
+        t.tm_sec  = 0;
+        t.tm_min  = 0;
+        t.tm_hour = 0;
+        t.tm_mday = day_;
+        t.tm_mon  = month_ - 1;
+        t.tm_year = year_ - 1900;
+        t.tm_isdst = 0;
+        return mktime(&t);
     }
 
-    StopsForBusResponse GetStopsForBus(const string& bus) const {
-        // Реализуйте этот метод
-        if (stopsForBus.count(bus) == 0) {return {};}
-        return {bus, stopsForBus.at(bus), busesForStop};
-    }
+private:
+    int year_;
+    int month_;
+    int day_;
 
-    AllBusesResponse GetAllBuses() const {
-        // Реализуйте этот метод
-        vector<StopsForBusResponse> stopsForBusResponse;
-        for(const auto& stopForBus: stopsForBus) {
-            stopsForBusResponse.push_back({stopForBus.first, stopForBus.second});
-        }
-        return {stopsForBusResponse};
-    }
+    Date(int year, int month, int day): year_(year), month_(month), day_(day) {}
 };
 
-// Не меняя тела функции main, реализуйте функции и классы выше
+int ComputeDaysDiff(const Date& date_to, const Date& date_from) {
+    const time_t timestamp_to = date_to.AsTimestamp();
+    const time_t timestamp_from = date_from.AsTimestamp();
+    static constexpr int SECONDS_IN_DAY = 60 * 60 * 24;
+    return (timestamp_to - timestamp_from) / SECONDS_IN_DAY;
+}
+
+static const Date START_DATE = Date::FromString("1699-01-01");
+static const Date END_DATE = Date::FromString("2100-01-01");
+static const size_t DAY_COUNT = ComputeDaysDiff(END_DATE, START_DATE);
 
 int main() {
-    int query_count;
-    Query q;
+    cout.precision(25);
+    vector<double> money(DAY_COUNT, .0);
+    vector<double> partial_sums;
+    partial_sums.reserve(DAY_COUNT);
+    size_t num_queries, num_earns;
+    cin >> num_earns;
 
-    cin >> query_count;
-
-    BusManager bm;
-    for (int i = 0; i < query_count; ++i) {
-        cin >> q;
-        switch (q.type) {
-            case QueryType::NewBus:
-                bm.AddBus(q.bus, q.stops);
-                break;
-            case QueryType::BusesForStop:
-                cout << bm.GetBusesForStop(q.stop) << endl;
-                break;
-            case QueryType::StopsForBus:
-                cout << bm.GetStopsForBus(q.bus) << endl;
-                break;
-            case QueryType::AllBuses:
-                cout << bm.GetAllBuses() << endl;
-                break;
+    for (size_t i = 0; i < num_earns; ++i) {
+        string date_;
+        int income;
+        cin >> date_ >> income;
+        Date date = Date::FromString(date_);
+        auto income_day_indx = ComputeDaysDiff(date, START_DATE);
+        money[income_day_indx] += income;
+    }
+    partial_sum(begin(money), end(money), back_inserter(partial_sums));
+//    cout << money.size() << " " << partial_sums.size() << endl;
+    cout << partial_sums.back() << endl;
+    cin >> num_queries;
+    for (size_t i = 0; i < num_queries; ++i) {
+        string date1, date2;
+        cin >> date1 >> date2;
+        Date from = Date::FromString(date1);
+        Date to = Date::FromString(date2);
+        auto from_indx = ComputeDaysDiff(from, START_DATE);
+        auto to_indx = ComputeDaysDiff(to, START_DATE);
+        double start_sum = 0;
+        if (from_indx >= 1) {
+            start_sum = partial_sums.at(from_indx - 1);
         }
+        cout << partial_sums.at(to_indx) - start_sum << endl;
     }
 
     return 0;
