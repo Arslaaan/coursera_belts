@@ -1,9 +1,10 @@
-#include <vector>
-#include <set>
-#include <algorithm>
 #include <iostream>
-#include <numeric>
-#include <sstream>
+#include <string>
+#include <cmath>
+#include <vector>
+#include <algorithm>
+#include <map>
+#include <set>
 
 using namespace std;
 
@@ -15,110 +16,88 @@ void print(const vector<T> &v) {
     cout << endl;
 }
 
-pair<string, string> SplitTwoStrict(string s, string delimiter) {
-    const size_t pos = s.find(delimiter);
-    if (pos == s.npos) {
-        return {s, ""};
-    } else {
-        return {s.substr(0, pos), s.substr(pos + delimiter.length())};
+string FindNameByYear(const map<int, string>& names, int year) {
+    auto iter_after = names.upper_bound(year);
+    string name;
+    if (iter_after != names.begin()) {
+        name = (--iter_after)->second;
     }
+    return name;
 }
 
-pair<string, string> SplitTwo(string s, string delimiter) {
-    const auto [lhs, rhs] = SplitTwoStrict(s, delimiter);
-    return {lhs, rhs};
-}
-
-string ReadToken(string& s, string delimiter = " ") {
-    const auto [lhs, rhs] = SplitTwo(s, delimiter);
-    s = rhs;
-    return lhs;
-}
-
-int ConvertToInt(string str) {
-    size_t pos;
-    const int result = stoi(string(str), &pos);
-    if (pos != str.length()) {
-        stringstream error;
-        error << "string " << str << " contains " << (str.length() - pos) << " trailing chars";
-        throw invalid_argument(error.str());
-    }
-    return result;
-}
-
-class Date {
+class Person {
 public:
-    static Date FromString(string str) {
-        const int year = ConvertToInt(ReadToken(str, "-"));
-        const int month = ConvertToInt(ReadToken(str, "-"));
-        const int day = ConvertToInt(str);
-        return {year, month, day};
+    Person() {
+        birthday = 0;
     }
 
-    // Weird legacy, can't wait for chrono::year_month_day
-    time_t AsTimestamp() const {
-        tm t;
-        t.tm_sec  = 0;
-        t.tm_min  = 0;
-        t.tm_hour = 0;
-        t.tm_mday = day_;
-        t.tm_mon  = month_ - 1;
-        t.tm_year = year_ - 1900;
-        t.tm_isdst = 0;
-        return mktime(&t);
+    Person(const string &s1, const string &s2, int y) {
+        first_names[y] = s1;
+        last_names[y] = s2;
+        birthday = y;
+    }
+
+    void ChangeFirstName(int year, const string &first_name) {
+        if (year >= birthday) {
+            first_names[year] = first_name;
+        }
+    }
+
+    void ChangeLastName(int year, const string &last_name) {
+        if (year >= birthday) {
+            last_names[year] = last_name;
+        }
+    }
+
+    string GetFullName(int year) const {
+        if (year < birthday) {
+            return "No person";
+        }
+        // получаем имя и фамилию по состоянию на год year
+        const string first_name = FindNameByYear(first_names, year);
+        const string last_name = FindNameByYear(last_names, year);
+
+        // если и имя, и фамилия неизвестны
+        if (first_name.empty() && last_name.empty()) {
+            return "Incognito";
+
+            // если неизвестно только имя
+        } else if (first_name.empty()) {
+            return last_name + " with unknown first name";
+
+            // если неизвестна только фамилия
+        } else if (last_name.empty()) {
+            return first_name + " with unknown last name";
+
+            // если известны и имя, и фамилия
+        } else {
+            return first_name + " " + last_name;
+        }
     }
 
 private:
-    int year_;
-    int month_;
-    int day_;
-
-    Date(int year, int month, int day): year_(year), month_(month), day_(day) {}
+    map<int, string> first_names;
+    map<int, string> last_names;
+    int birthday;
 };
 
-int ComputeDaysDiff(const Date& date_to, const Date& date_from) {
-    const time_t timestamp_to = date_to.AsTimestamp();
-    const time_t timestamp_from = date_from.AsTimestamp();
-    static constexpr int SECONDS_IN_DAY = 60 * 60 * 24;
-    return (timestamp_to - timestamp_from) / SECONDS_IN_DAY;
-}
-
-static const Date START_DATE = Date::FromString("1699-01-01");
-static const Date END_DATE = Date::FromString("2100-01-01");
-static const size_t DAY_COUNT = ComputeDaysDiff(END_DATE, START_DATE);
-
 int main() {
-    cout.precision(25);
-    vector<double> money(DAY_COUNT, .0);
-    vector<double> partial_sums;
-    partial_sums.reserve(DAY_COUNT);
-    size_t num_queries, num_earns;
-    cin >> num_earns;
+    Person person;
 
-    for (size_t i = 0; i < num_earns; ++i) {
-        string date_;
-        int income;
-        cin >> date_ >> income;
-        Date date = Date::FromString(date_);
-        auto income_day_indx = ComputeDaysDiff(date, START_DATE);
-        money[income_day_indx] += income;
+    person.ChangeFirstName(1965, "Polina");
+    person.ChangeLastName(1967, "Sergeeva");
+    for (int year : {1900, 1965, 1990}) {
+        cout << person.GetFullName(year) << endl;
     }
-    partial_sum(begin(money), end(money), back_inserter(partial_sums));
-//    cout << money.size() << " " << partial_sums.size() << endl;
-    cout << partial_sums.back() << endl;
-    cin >> num_queries;
-    for (size_t i = 0; i < num_queries; ++i) {
-        string date1, date2;
-        cin >> date1 >> date2;
-        Date from = Date::FromString(date1);
-        Date to = Date::FromString(date2);
-        auto from_indx = ComputeDaysDiff(from, START_DATE);
-        auto to_indx = ComputeDaysDiff(to, START_DATE);
-        double start_sum = 0;
-        if (from_indx >= 1) {
-            start_sum = partial_sums.at(from_indx - 1);
-        }
-        cout << partial_sums.at(to_indx) - start_sum << endl;
+
+    person.ChangeFirstName(1970, "Appolinaria");
+    for (int year : {1969, 1970}) {
+        cout << person.GetFullName(year) << endl;
+    }
+
+    person.ChangeLastName(1968, "Volkova");
+    for (int year : {1969, 1970}) {
+        cout << person.GetFullName(year) << endl;
     }
 
     return 0;
