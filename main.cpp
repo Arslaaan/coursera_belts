@@ -16,89 +16,38 @@ void print(const vector<T> &v) {
     cout << endl;
 }
 
-string FindNameByYear(const map<int, string>& names, int year) {
-    auto iter_after = names.upper_bound(year);
-    string name;
-    if (iter_after != names.begin()) {
-        name = (--iter_after)->second;
-    }
-    return name;
+template <typename RandomIt>
+pair<RandomIt, RandomIt> FindStartsWith(
+        RandomIt range_begin, RandomIt range_end,
+        const string& prefix) {
+    auto left = lower_bound(range_begin, range_end, prefix, [prefix](const auto& x, string y) {
+        return x.substr(0, prefix.size()) < y;
+    });
+    auto right = upper_bound(range_begin, range_end, prefix, [prefix](string y, const auto& x) {
+        return y < x.substr(0, prefix.size());
+    });
+    return {left, right};
 }
 
-class Person {
-public:
-    Person() {
-        birthday = 0;
-    }
-
-    Person(const string &s1, const string &s2, int y) {
-        first_names[y] = s1;
-        last_names[y] = s2;
-        birthday = y;
-    }
-
-    void ChangeFirstName(int year, const string &first_name) {
-        if (year >= birthday) {
-            first_names[year] = first_name;
-        }
-    }
-
-    void ChangeLastName(int year, const string &last_name) {
-        if (year >= birthday) {
-            last_names[year] = last_name;
-        }
-    }
-
-    string GetFullName(int year) const {
-        if (year < birthday) {
-            return "No person";
-        }
-        // получаем имя и фамилию по состоянию на год year
-        const string first_name = FindNameByYear(first_names, year);
-        const string last_name = FindNameByYear(last_names, year);
-
-        // если и имя, и фамилия неизвестны
-        if (first_name.empty() && last_name.empty()) {
-            return "Incognito";
-
-            // если неизвестно только имя
-        } else if (first_name.empty()) {
-            return last_name + " with unknown first name";
-
-            // если неизвестна только фамилия
-        } else if (last_name.empty()) {
-            return first_name + " with unknown last name";
-
-            // если известны и имя, и фамилия
-        } else {
-            return first_name + " " + last_name;
-        }
-    }
-
-private:
-    map<int, string> first_names;
-    map<int, string> last_names;
-    int birthday;
-};
-
 int main() {
-    Person person;
+    const vector<string> sorted_strings = {"moscow", "motovilikha", "murmansk"};
 
-    person.ChangeFirstName(1965, "Polina");
-    person.ChangeLastName(1967, "Sergeeva");
-    for (int year : {1900, 1965, 1990}) {
-        cout << person.GetFullName(year) << endl;
+    const auto mo_result =
+            FindStartsWith(begin(sorted_strings), end(sorted_strings), "mo");
+    for (auto it = mo_result.first; it != mo_result.second; ++it) {
+        cout << *it << " ";
     }
+    cout << endl;
 
-    person.ChangeFirstName(1970, "Appolinaria");
-    for (int year : {1969, 1970}) {
-        cout << person.GetFullName(year) << endl;
-    }
+    const auto mt_result =
+            FindStartsWith(begin(sorted_strings), end(sorted_strings), "mt");
+    cout << (mt_result.first - begin(sorted_strings)) << " " <<
+         (mt_result.second - begin(sorted_strings)) << endl;
 
-    person.ChangeLastName(1968, "Volkova");
-    for (int year : {1969, 1970}) {
-        cout << person.GetFullName(year) << endl;
-    }
+    const auto na_result =
+            FindStartsWith(begin(sorted_strings), end(sorted_strings), "na");
+    cout << (na_result.first - begin(sorted_strings)) << " " <<
+         (na_result.second - begin(sorted_strings)) << endl;
 
     return 0;
 }
