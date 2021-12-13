@@ -4,132 +4,127 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <sstream>
+#include <cmath>
+#include <iomanip>
 
 using namespace std;
 
-// Внимание!
-// Для простоты разбора будем использовать только числа из одной цифры,
-// а также не будет скобок, пробелов и ненужных символов.
-// При этом, будем считать, что выражение всегда корректно.
-
-struct Node {
-    virtual int Evaluate() const = 0;
+class Figure {
+    vector<int> edges;
+public:
+    virtual string Name() = 0;
+    virtual double Perimeter() = 0;
+    virtual double Area() = 0;
+protected:
+    vector<int> getEdges() const {
+        return edges;
+    }
+    void addEdge(double edge) {
+        edges.push_back(edge);
+    }
 };
 
-struct Value : public Node {
-    Value(char digit) : _value(digit - '0') {}
-
-    int Evaluate() const override { return _value; }
-
-private:
-    const uint8_t _value;
+class Triangle : public Figure {
+public:
+    Triangle(int i, int i1, int i2) {
+        addEdge(i);
+        addEdge(i1);
+        addEdge(i2);
+    }
+    string Name() override {
+        return "TRIANGLE";
+    }
+    double Perimeter() override {
+        double sum = 0.0;
+        for (int i = 0; i < 3; ++i) {
+            sum += getEdges()[i];
+        }
+        return sum;
+    }
+    double Area() override {
+        double p = Perimeter() / 2.0;
+        return sqrt(p * (p - getEdges()[0]) * (p - getEdges()[1]) * (p - getEdges()[2]));
+    }
 };
 
-struct Variable : public Node {
-    Variable(const int &x) : _x(x) {}
-
-    int Evaluate() const override { return _x; }
-
-private:
-    const int &_x;
+class Rect : public Figure {
+public:
+    Rect(int a, int b) {
+        addEdge(a);
+        addEdge(b);
+    }
+    string Name() override {
+        return "RECT";
+    }
+    double Perimeter() override {
+        double sum = 0.0;
+        for (int i = 0; i < 2; ++i) {
+            sum += getEdges()[i];
+        }
+        return sum * 2;
+    }
+    double Area() override {
+        return getEdges()[0] * getEdges()[1];
+    }
 };
 
-struct Op : public Node {
-    Op(char value)
-            : precedence([value] {
-        if (value == '*') {
-            return 2;
-        } else {
-            return 1;
-        }
-    }()),
-              _op(value) {}
-
-    const uint8_t precedence;
-
-    int Evaluate() const override {
-        if (_op == '*') {
-            return _left->Evaluate() * _right->Evaluate();
-        } else if (_op == '+') {
-            return _left->Evaluate() + _right->Evaluate();
-        } else if (_op == '-') {
-            return _left->Evaluate() - _right->Evaluate();
-        }
-
-        return 0;
+class Circle : public Figure {
+    double pi = 3.14;
+public:
+    Circle(int r) {
+        addEdge(r);
     }
-
-    void SetLeft(shared_ptr<Node> node) { _left = node; }
-    void SetRight(shared_ptr<Node> node) { _right = node; }
-
-private:
-    const char _op;
-    shared_ptr<const Node> _left, _right;
+    string Name() override {
+        return "CIRCLE";
+    }
+    double Perimeter() override {
+        return 2 * pi * getEdges()[0];
+    }
+    double Area() override {
+        return pi * getEdges()[0] * getEdges()[0];
+    }
 };
 
-template <class Iterator>
-shared_ptr<Node> Parse(Iterator token, Iterator end, const int &x) {
-    // Empty expression
-    if (token == end) {
-        return make_shared<Value>('0');
+shared_ptr<Figure> CreateFigure(istream& is) {
+    string type;
+    is >> type;
+    if (type == "RECT") {
+        int a, b;
+        is >> a >> b;
+        return make_shared<Rect>(a, b);
+    } else if (type == "CIRCLE") {
+        int r;
+        is >> r;
+        return make_shared<Circle>(r);
+    } else if (type == "TRIANGLE") {
+        int a, b, c;
+        is >> a >> b >> c;
+        return make_shared<Triangle>(a, b, c);
     }
-
-    stack<shared_ptr<Node>> values;
-    stack<shared_ptr<Op>> ops;
-
-    auto PopOps = [&](int precedence) {
-        while (!ops.empty() && ops.top()->precedence >= precedence) {
-            auto value1 = values.top();
-            values.pop();
-            auto value2 = values.top();
-            values.pop();
-            auto op = ops.top();
-            ops.pop();
-
-            op->SetRight(value1);
-            op->SetLeft(value2);
-
-            values.push(op);
-        }
-    };
-
-    while (token != end) {
-        const auto &value = *token;
-        if (value >= '0' && value <= '9') {
-            values.push(make_shared<Value>(value));
-        } else if (value == 'x') {
-            values.push(make_shared<Variable>(x));
-        } else if (value == '*') {
-            PopOps(2);
-            ops.push(make_shared<Op>(value));
-        } else if (value == '+' || value == '-') {
-            PopOps(1);
-            ops.push(make_shared<Op>(value));
-        }
-
-        ++token;
-    }
-
-    while (!ops.empty()) {
-        PopOps(0);
-    }
-
-    return values.top();
 }
 
 int main() {
-    string tokens;
-    cout << "Enter expression: ";
-    getline(cin, tokens);
+    vector<shared_ptr<Figure>> figures;
+    for (string line; getline(cin, line); ) {
+        istringstream is(line);
 
-    int x = 0;
-    auto node = Parse(tokens.begin(), tokens.end(), x);
-
-    cout << "Enter x: ";
-    while (cin >> x) {
-        cout << "Expression value: " << node->Evaluate() << endl;
-        cout << "Enter x: ";
+        string command;
+        is >> command;
+        if (command == "ADD") {
+            // Пропускаем "лишние" ведущие пробелы.
+            // Подробнее об std::ws можно узнать здесь:
+            // https://en.cppreference.com/w/cpp/io/manip/ws
+            is >> ws;
+            figures.push_back(CreateFigure(is));
+        } else if (command == "PRINT") {
+            for (const auto& current_figure : figures) {
+                cout << fixed << setprecision(3)
+                     << current_figure->Name() << " "
+                     << current_figure->Perimeter() << " "
+                     << current_figure->Area() << endl;
+            }
+        }
     }
-
     return 0;
 }
