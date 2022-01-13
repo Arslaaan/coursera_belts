@@ -1,113 +1,63 @@
 #include <iostream>
-#include <string>
-#include <vector>
+#include <stdexcept>
+#include "database.h"
+#include "condition_parser.h"
+#include "test_runner.h"
 
 using namespace std;
 
-class Human
-{
-public:
-    Human( const string& name, const string& type = "Human" )
-            : Name( name ), Type( type ) {}
+void TestAll() {
+    TestRunner tr;
+    tr.RunTest(TestParseEvent, "TestParseEvent");
+    tr.RunTest(TestParseCondition, "TestParseCondition");
+}
 
-    // getting rid of duplicate code
-    void PrintResponse( const string& response ) const
-    {
-        cout << Type << ": " << Name << " " << response << endl;
-    }
+int main() {
+//    TestAll();
 
-    virtual void Walk( const string& destination ) const
-    {
-        PrintResponse( "walks to: " + destination );
-    }
+    Database db;
 
-    void VisitPlaces( const vector<string>& places ) const
-    {
-        for ( const auto& p : places )
-        {
-            Walk( p );
+    for (string line; getline(cin, line);) {
+        istringstream is(line);
+
+        string command;
+        is >> command;
+        if (command == "Add") {
+            const auto date = ParseDate(is);
+            const auto event = ParseEvent(is);
+            db.Add(date, event);
+        } else if (command == "Print") {
+            db.Print(cout);
+        } else if (command == "Del") {
+            auto condition = ParseCondition(is);
+            auto predicate = [condition](const Date &date, const string &event) {
+                return condition->Evaluate(date, event);
+            };
+            int count = db.RemoveIf(predicate);
+            cout << "Removed " << count << " entries" << endl;
+        } else if (command == "Find") {
+            auto condition = ParseCondition(is);
+            auto predicate = [condition](const Date &date, const string &event) {
+                return condition->Evaluate(date, event);
+            };
+
+            const auto entries = db.FindIf(predicate);
+            for (const auto &entry : entries) {
+                cout << entry << endl;
+            }
+            cout <<  "Found " << entries.size() << " entries" << endl;
+        } else if (command == "Last") {
+            try {
+                cout << db.Last(ParseDate(is)) << endl;
+            } catch (invalid_argument &) {
+                cout << "No entries" << endl;
+            }
+        } else if (command.empty()) {
+            continue;
+        } else {
+            throw logic_error("Unknown command: " + command);
         }
     }
 
-    string getName() const
-    {
-        return Name;
-    }
-
-    string getType() const
-    {
-        return Type;
-    }
-
-private:
-    const string Name;
-    const string Type;
-};
-
-class Student : public Human
-{
-public:
-
-    Student( const string& name, const string& favouriteSong )
-            : Human( name, "Student" ), FavouriteSong( favouriteSong ) {}
-
-    void Learn() const
-    {
-        PrintResponse( "learns" );
-    }
-
-    void Walk( const string& destination ) const override
-    {
-        Human::Walk( destination );
-        SingSong();
-    }
-
-    void SingSong() const
-    {
-        PrintResponse( "sings a song: " + FavouriteSong );
-    }
-
-private:
-    const string FavouriteSong;
-};
-
-
-class Teacher : public Human
-{
-public:
-
-    Teacher( const string& name, const string& subject )
-            : Human( name, "Teacher" ), Subject( subject ) {}
-
-    void Teach() const
-    {
-        PrintResponse( "teaches: " + Subject );
-    }
-
-private:
-    const string Subject;
-};
-
-
-class Policeman : public Human
-{
-public:
-    Policeman( const string& name ) : Human( name, "Policeman" ) {}
-
-    void Check( const Human& h ) const
-    {
-        PrintResponse( "checks " + h.getType() + ". " + h.getType() + "'s name is: " + h.getName() );
-    }
-};
-
-int main()
-{
-    Teacher t( "Jim", "Math" );
-    Student s( "Ann", "We will rock you" );
-    Policeman p( "Bob" );
-
-    t.VisitPlaces({ "Moscow", "London" } );
-    p.Check( s );
-    s.VisitPlaces( { "Moscow", "London" } );
     return 0;
 }
