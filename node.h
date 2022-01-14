@@ -36,7 +36,7 @@ class EventComparisonNode : public Node {
     string event_;
     Comparison comparison_;
 public:
-    EventComparisonNode(const Comparison& comparison, const string& event);
+    EventComparisonNode(const Comparison& comparison, string  event);
     bool Evaluate(const Date& date, const string& event) const override;
 };
 

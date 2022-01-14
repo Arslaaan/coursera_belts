@@ -1,11 +1,10 @@
 #include "database.h"
 
+#include <utility>
+
 void Database::Add(const Date &date, const std::string &event) {
     Record record(date, event);
     if (!records_set.count(record)) {
-        std::set<Record>::key_compare comp = records_set.key_comp();
-        bool x = comp(record, Record({2020, 1, 15}, "Katya"));
-        bool y = comp(Record({2020, 1, 15}, "Katya"), record);
         records_set.insert(record);
         records_map[date].push_back(record);
     }
@@ -53,12 +52,12 @@ int Database::RemoveIf(const std::function<bool(Date, string)> &condition) {
 vector<Record>
 Database::FindIf(const std::function<bool(Date, string)> &condition) const {
     vector<Record> result;
-    for (auto record_it = records_set.begin(); record_it != records_set.end();) {
-        const Record& record = *record_it;
-        if (condition(record.getDate(), record.getEvent())) {
-            result.emplace_back(record.getDate(), record.getEvent());
+    for (const auto & record_map_it : records_map) {
+        for (const auto& record: record_map_it.second) {
+            if (condition(record.getDate(), record.getEvent())) {
+                result.emplace_back(record.getDate(), record.getEvent());
+            }
         }
-        record_it++;
     }
     return result;
 }
@@ -80,7 +79,7 @@ ostream &operator<<(ostream &out, const pair<Date, string> &entity) {
     return out;
 }
 
-Record::Record(const Date &date, const string &event) : date(date), event(event) {}
+Record::Record(const Date &date, string event) : date(date), event(std::move(event)) {}
 
 const Date &Record::getDate() const {
     return date;

@@ -2,19 +2,19 @@
 
 Date::Date() : year(0), month(0), day(0) {}
 
-int Date::getYear() const {
+const int& Date::getYear() const {
     return year;
 }
 
-int Date::getMonth() const {
+const int& Date::getMonth() const {
     return month;
 }
 
-int Date::getDay() const {
+const int& Date::getDay() const {
     return day;
 }
 
-Date::Date(int y, int m, int d) : year(y), month(m), day(d) {};
+Date::Date(int y, int m, int d) : year(y), month(m), day(d) {}
 
 std::ostream& operator<<(std::ostream& out, const Date& date) {
     out << std::setw(4) << std::setfill('0') << date.getYear();

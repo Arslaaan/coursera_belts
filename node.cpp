@@ -1,14 +1,16 @@
 #include "node.h"
 
+#include <utility>
+
 DateComparisonNode::DateComparisonNode(const Comparison &comparison, const Date &date)
         : date_(date), comparison_(comparison) {};
 
 LogicalOperationNode::LogicalOperationNode(const LogicalOperation &operation, shared_ptr<Node> l,
                                            shared_ptr<Node> r)
-        : op(operation), left(l), right(r) {};
+        : op(operation), left(std::move(l)), right(std::move(r)) {};
 
-EventComparisonNode::EventComparisonNode(const Comparison &comparison, const string &event)
-        : comparison_(comparison), event_(event) {};
+EventComparisonNode::EventComparisonNode(const Comparison &comparison, string event)
+        : comparison_(comparison), event_(std::move(event)) {};
 
 bool DateComparisonNode::Evaluate(const Date &date, const string &event) const {
     switch (comparison_) {

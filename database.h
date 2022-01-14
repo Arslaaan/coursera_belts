@@ -14,7 +14,7 @@ private:
     Date date;
     string event;
 public:
-    Record(const Date &date, const string &event);
+    Record(const Date &date, string event);
 
     const Date &getDate() const;
 

@@ -11,9 +11,9 @@ class Date {
 public:
     Date();
     Date(int y, int m, int d);
-    int getYear() const;
-    int getMonth() const;
-    int getDay() const;
+    const int& getYear() const;
+    const int& getMonth() const;
+    const int& getDay() const;
     bool operator<(const Date& another_date) const {
         return std::make_tuple(year, month, day) < std::make_tuple(another_date.year, another_date.month, another_date.day);
     }
