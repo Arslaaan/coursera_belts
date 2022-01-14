@@ -5,21 +5,41 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <list>
 
 #include "node.h"
 
+class Record {
+private:
+    Date date;
+    string event;
+public:
+    Record(const Date &date, const string &event);
+
+    const Date &getDate() const;
+
+    const string &getEvent() const;
+
+    bool operator==(const Record &another_record) const;
+
+    bool operator!=(const Record &another_record) const;
+
+    bool operator<(const Record &another_record) const;
+};
+
 class Database {
-    map<Date, vector<string>> events;
+    set<Record> records_set;
+    map<Date, list<Record>> records_map;
 public:
     void Add(const Date &date, const std::string &event);
 
     void Print(std::ostream &ostream) const;
 
-    string Last(const Date &date) const;
+    const Record &Last(const Date &date) const;
 
-    vector<pair<Date, string>> FindIf(const std::function<bool(Date, string)>& condition) const;
+    vector<Record> FindIf(const std::function<bool(Date, string)> &condition) const;
 
-    int RemoveIf(const std::function<bool(Date, string)>& condition);
+    int RemoveIf(const std::function<bool(Date, string)> &condition);
 };
 
-ostream& operator<<(ostream& out, const pair<Date, string>& entity);
+ostream& operator<<(ostream &out, const Record& record);

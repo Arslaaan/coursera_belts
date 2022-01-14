@@ -1,72 +1,116 @@
 #include "database.h"
 
 void Database::Add(const Date &date, const std::string &event) {
-    vector<string> &events_ = events[date];
-    for (const string &e: events_) {
-        if (e == event) {
-            return;
-        }
+    Record record(date, event);
+    if (!records_set.count(record)) {
+        std::set<Record>::key_compare comp = records_set.key_comp();
+        bool x = comp(record, Record({2020, 1, 15}, "Katya"));
+        bool y = comp(Record({2020, 1, 15}, "Katya"), record);
+        records_set.insert(record);
+        records_map[date].push_back(record);
     }
-    events_.push_back(event);
 }
 
 void Database::Print(std::ostream &ostream) const {
-    for (const auto &entry: events) {
-        for (const auto &date_event: entry.second) {
-            ostream << make_pair<const Date &, const string &>(entry.first, date_event) << endl;
+//    ostream << "Print map" << endl;
+    for (const auto &entry: records_map) {
+        for (const auto &record: entry.second) {
+            ostream << record << endl;
         }
     }
+//    ostream << "Print set" << endl;
+//    for (const auto& e: records_set) {
+//        ostream << e << endl;
+//    }
 }
 
-int Database::RemoveIf(const std::function<bool(Date, string)>& condition) {
+int Database::RemoveIf(const std::function<bool(Date, string)> &condition) {
     size_t counter = 0;
-    for (auto entry = events.begin(); entry != events.end();) {
-        vector<string> &date_events = entry->second;
-        size_t size_before = date_events.size();
-        date_events.erase(remove_if(date_events.begin(), date_events.end(), [entry, condition](const string &event) {
-            return condition(entry->first, event);
-        }), date_events.end());
-
-        size_t diff = size_before - date_events.size();
-        counter += diff;
-
-        if (date_events.empty()) {
-            entry = events.erase(entry); // todo будет работать ?
+    for (auto record_it = records_set.begin(); record_it != records_set.end();) {
+        const Record& record = *record_it;
+        if (condition(record.getDate(), record.getEvent())) {
+            counter++;
+            list<Record> &list_for_date = records_map[record.getDate()];
+            for (auto list_it = list_for_date.begin(); list_it != list_for_date.end();) {
+                if (*list_it == record) {
+                    list_it = list_for_date.erase(list_it);
+                    break;
+                } else {
+                    list_it++;
+                }
+            }
+            if (list_for_date.empty()) {
+                records_map.erase(record.getDate());
+            }
+            record_it = records_set.erase(record_it);
         } else {
-            ++entry;
+            record_it++;
         }
     }
     return counter;
 }
 
-vector<pair<Date, string>>
-Database::FindIf(const std::function<bool(Date, string)>& condition) const {
-    vector<pair<Date, string>> result;
-    for (auto &entry: events) {
-        for (const auto &date_event: entry.second) {
-            if (condition(entry.first, date_event)) {
-                result.emplace_back(entry.first, date_event);
-            }
+vector<Record>
+Database::FindIf(const std::function<bool(Date, string)> &condition) const {
+    vector<Record> result;
+    for (auto record_it = records_set.begin(); record_it != records_set.end();) {
+        const Record& record = *record_it;
+        if (condition(record.getDate(), record.getEvent())) {
+            result.emplace_back(record.getDate(), record.getEvent());
         }
+        record_it++;
     }
     return result;
 }
 
-string Database::Last(const Date &date) const {
-    const auto &up_bound = upper_bound(events.begin(), events.end(), date,
-                                       [](const Date &date_, const pair<Date, vector<string>> &pair_) {
+const Record &Database::Last(const Date &date) const {
+    const auto &up_bound = upper_bound(records_map.begin(), records_map.end(), date,
+                                       [](const Date &date_, const pair<Date, list<Record>> &pair_) {
                                            return date_ < pair_.first;
                                        });
-    if (up_bound == events.begin()) {
+    if (up_bound == records_map.begin()) {
         throw invalid_argument("no elements before");
     }
     const auto &last = prev(up_bound);
-    stringstream ss;
-    ss << make_pair<>(last->first, last->second.back());
-    return ss.str();
+    return last->second.back();
 }
 
-ostream &operator<<(ostream &out, const pair<Date, string>& entity) {
+ostream &operator<<(ostream &out, const pair<Date, string> &entity) {
     out << entity.first << " " << entity.second;
+    return out;
+}
+
+Record::Record(const Date &date, const string &event) : date(date), event(event) {}
+
+const Date &Record::getDate() const {
+    return date;
+}
+
+const string &Record::getEvent() const {
+    return event;
+}
+
+bool Record::operator==(const Record &another_record) const {
+    return date == another_record.getDate() && event == another_record.getEvent();
+}
+
+bool Record::operator<(const Record &another_record) const {
+    if (date == another_record.getDate()) {
+        return event < another_record.getEvent();
+    } else {
+        return date < another_record.getDate();
+    }
+}
+
+//bool Record::operator>(const Record &another_record) const {
+//    return date > another_record.getDate();
+//}
+
+bool Record::operator!=(const Record &another_record) const {
+    return !(*this == another_record);
+}
+
+ostream &operator<<(ostream &out, const Record &record) {
+    out << record.getDate() << " " << record.getEvent();
     return out;
 }
