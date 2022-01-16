@@ -1,4 +1,5 @@
 #pragma once
+
 #include <sstream>
 #include <exception>
 #include <iostream>
@@ -12,10 +13,10 @@
 #include "command_handler.h"
 
 template<class T>
-std::ostream &operator<<(std::ostream &os, const std::set <T> &s);
+std::ostream &operator<<(std::ostream &os, const std::set<T> &s);
 
 template<class K, class V>
-std::ostream &operator<<(std::ostream &os, const std::map <K, V> &m);
+std::ostream &operator<<(std::ostream &os, const std::map<K, V> &m);
 
 template<class T, class U>
 void AssertEqual(const T &t, const U &u, const std::string &hint);
@@ -23,14 +24,15 @@ void AssertEqual(const T &t, const U &u, const std::string &hint);
 template<class T, class U>
 void AssertNotEqual(const T &t, const U &u, const std::string &hint);
 
-void Assert(bool b, const std::string& hint);
+void Assert(bool b, const std::string &hint);
 
 class TestRunner {
 public:
-    template <class TestFunc>
-    void RunTest(TestFunc func, const std::string& test_name);
+    template<class TestFunc>
+    void RunTest(TestFunc func, const std::string &test_name);
 
     ~TestRunner();
+
 private:
     int fail_count = 0;
 };
@@ -103,7 +105,7 @@ void Assert(bool b, const std::string &hint) {
     AssertEqual(b, true, hint);
 }
 
-template <class TestFunc>
+template<class TestFunc>
 void TestRunner::RunTest(TestFunc func, const std::string &test_name) {
     try {
         func();
@@ -234,149 +236,158 @@ void TestParseEvent() {
 
 void TestTaskExamples() {
     {
-        try {
-            istringstream is("Add 0-2-3 Kolya\n"
-                             "Add 1-12-12 Kolya\n"
-                             "Add 1-12-12 Sarkazi\n"
-                             "Add 999-12-12 Kolya\n"
-                             "Add 1000-12-12 Kolya\n"
-                             "Add 9999-12-12 Kolya\n"
-                             "Print\n");
-            ostringstream os;
-            Database db;
-            commandHandler(db, is, os);
-            AssertEqual(os.str(), "0000-02-03 Kolya\n0001-12-12 Kolya\n0001-12-12 Sarkazi\n0999-12-12 Kolya\n1000-12-12 Kolya\n9999-12-12 Kolya\n", "Add test");
-        } catch (exception& e) {
-            e.what();
-        }
+        istringstream is("Add 0-2-3 Kolya\n"
+                         "Add 0-2-3 Abc\n"
+                         "Add 0-2-3 ZXC\n"
+                         "Add 1-12-12 Sarkazi\n"
+                         "Add 1-12-12 Kolya\n"
+                         "Del date == 0-2-3\n"
+                         "Print\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(), "Removed 3 entries\n0001-12-12 Sarkazi\n0001-12-12 Kolya\n", "Add test 1");
     }
     {
-        try {
-            istringstream is("Add 0-2-3 Kolya\n"
-                             "Add 1-12-12 Kolya\n"
-                             "Add 1-12-12 Sarkazi\n"
-                             "Add 999-12-12 Kolya\n"
-                             "Add 1000-12-12 Kolya\n"
-                             "Add 9999-12-12 Kolya\n"
-                             "Print\n");
-            ostringstream os;
-            Database db;
-            commandHandler(db, is, os);
-            AssertEqual(os.str(), "0000-02-03 Kolya\n0001-12-12 Kolya\n0001-12-12 Sarkazi\n0999-12-12 Kolya\n1000-12-12 Kolya\n9999-12-12 Kolya\n", "Add test");
-        } catch (exception& e) {
-            e.what();
-        }
+        istringstream is("Add 0-2-3 Kolya\n"
+                         "Add 0-2-3 ASD\n"
+                         "Add 0-2-3 ZXC\n"
+                         "Add 1-12-12 Sarkazi\n"
+                         "Add 1-12-12 Kolya\n"
+                         "Del date == 1-12-12\n"
+                         "Print\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(), "Removed 2 entries\n0000-02-03 Kolya\n0000-02-03 ASD\n0000-02-03 ZXC\n", "Add test 2");
     }
     {
-        try {
-            istringstream is("Add 0-2-3 Kolya\n"
-                             "Add 1-12-12 Kolya\n"
-                             "Add 1-12-12 Sarkazi\n"
-                             "Add 1000-12-12 Kolya\n"
-                             "Del\n"
-                             "Find\n");
-            ostringstream os;
-            Database db;
-            commandHandler(db, is, os);
-            AssertEqual(os.str(), "Removed 4 entries\n", "Add test");
-        } catch (exception& e) {
-            e.what();
-        }
+        istringstream is("Add 0-2-3 Kolya\n"
+                         "Add 1-12-12 Kolya\n"
+                         "Add 1-12-12 Sarkazi\n"
+                         "Add 999-12-12 Kolya\n"
+                         "Add 1000-12-12 Kolya\n"
+                         "Add 9999-12-12 Kolya\n"
+                         "Print\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(),
+                    "0000-02-03 Kolya\n0001-12-12 Kolya\n0001-12-12 Sarkazi\n0999-12-12 Kolya\n1000-12-12 Kolya\n9999-12-12 Kolya\n",
+                    "Add test 3");
     }
     {
-        try {
-            istringstream is("Add 2017-06-01 1st of June\n"
-                             "Add 2017-07-08 8th of July\n"
-                             "Add 2017-07-08 Someone's birthday\n"
-                             "Del date == 2017-07-08\n");
-            ostringstream os;
-            Database db;
-            commandHandler(db, is, os);
-            AssertEqual(os.str(), "Removed 2 entries\n", "Add test");
-        } catch (exception& e) {
-            e.what();
-        }
+        istringstream is("Add 0-2-3 Kolya\n"
+                         "Add 1-12-12 Kolya\n"
+                         "Add 1-12-12 Sarkazi\n"
+                         "Add 999-12-12 Kolya\n"
+                         "Add 1000-12-12 Kolya\n"
+                         "Add 9999-12-12 Kolya\n"
+                         "Print\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(),
+                    "0000-02-03 Kolya\n0001-12-12 Kolya\n0001-12-12 Sarkazi\n0999-12-12 Kolya\n1000-12-12 Kolya\n9999-12-12 Kolya\n",
+                    "Add test 4");
     }
     {
-        try {
-            istringstream is("Add 2017-01-01 Holiday\n"
-                             "Add 2017-03-08 Holiday\n"
-                             "Add 2017-1-1 New Year\n"
-                             "Add 2017-1-1 New Year\n"
-                             "Print\n");
-            ostringstream os;
-            Database db;
-            commandHandler(db, is, os);
-            AssertEqual(os.str(), "2017-01-01 Holiday\n"
-                                  "2017-01-01 New Year\n"
-                                  "2017-03-08 Holiday\n", "Print test");
-        } catch (exception& e) {
-            cerr << e.what() << endl;
-        }
+        istringstream is("Add 0-2-3 Kolya\n"
+                         "Add 1-12-12 Kolya\n"
+                         "Add 1-12-12 Sarkazi\n"
+                         "Add 1000-12-12 Kolya\n"
+                         "Del\n"
+                         "Find\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(), "Removed 4 entries\nFound 0 entries\n", "Add test 5");
     }
     {
-        try {
-            istringstream is("Add 2017-01-01 Holiday\n"
-                             "Add 2017-03-08 Holiday\n"
-                             "Add 2017-01-01 New Year\n"
-                             "Find event != \"working day\"\n"
-                             "Add 2017-05-09 Holiday\n");
-            ostringstream os;
-            Database db;
-            commandHandler(db, is, os);
-            AssertEqual(os.str(), "2017-01-01 Holiday\n"
-                                  "2017-01-01 New Year\n"
-                                  "2017-03-08 Holiday\n"
-                                  "Found 3 entries\n", "Find test");
-        } catch (exception& e) {
-            cerr << e.what() << endl;
-        }
+        istringstream is("Add 0-2-3 Kolya\n"
+                         "Add 1-12-12 Kolya\n"
+                         "Add 1-12-12 Sarkazi\n"
+                         "Add 1000-12-12 Kolya\n"
+                         "Find\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(), "0000-02-03 Kolya\n0001-12-12 Kolya\n0001-12-12 Sarkazi\n1000-12-12 Kolya\nFound 4 entries\n", "Add test xx");
     }
     {
-        try {
-            istringstream is("Add 2017-01-01 New Year\n"
-                             "Add 2017-03-08 Holiday\n"
-                             "Add 2017-01-01 Holiday\n"
-                             "Last 2016-12-31\n"
-                             "Last 2017-01-01\n"
-                             "Last 2017-06-01\n"
-                             "Add 2017-05-09 Holiday\n");
-            ostringstream os;
-            Database db;
-            commandHandler(db, is, os);
-            AssertEqual(os.str(), "No entries\n"
-                                  "2017-01-01 Holiday\n"
-                                  "2017-03-08 Holiday\n", "Last test");
-        } catch (exception& e) {
-            cerr << e.what() << endl;
-        }
+        istringstream is("Add 2017-06-01 1st of June\n"
+                         "Add 2017-07-08 8th of July\n"
+                         "Add 2017-07-08 Someone's birthday\n"
+                         "Del date == 2017-07-08\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(), "Removed 2 entries\n", "Add test 6");
     }
     {
-        try {
-            istringstream is("Add 2017-11-21 Tuesday\n"
-                             "Add 2017-11-20 Monday\n"
-                             "Add 2017-11-21 Weekly meeting\n"
-                             "Print\n"
-                             "Find event != \"Weekly meeting\"\n"
-                             "Last 2017-11-30\n"
-                             "Del date > 2017-11-20\n"
-                             "Last 2017-11-30\n"
-                             "Last 2017-11-01\n");
-            ostringstream os;
-            Database db;
-            commandHandler(db, is, os);
-            AssertEqual(os.str(), "2017-11-20 Monday\n"
-                                  "2017-11-21 Tuesday\n"
-                                  "2017-11-21 Weekly meeting\n"
-                                  "2017-11-20 Monday\n"
-                                  "2017-11-21 Tuesday\n"
-                                  "Found 2 entries\n"
-                                  "2017-11-21 Weekly meeting\n"
-                                  "Removed 2 entries\n"
-                                  "2017-11-20 Monday\n"
-                                  "No entries\n", "All test");
-        } catch (exception& e) {
-            cerr << e.what() << endl;
-        }
+        istringstream is("Add 2017-01-01 Holiday\n"
+                         "Add 2017-03-08 Holiday\n"
+                         "Add 2017-1-1 New Year\n"
+                         "Add 2017-1-1 New Year\n"
+                         "Print\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(), "2017-01-01 Holiday\n"
+                              "2017-01-01 New Year\n"
+                              "2017-03-08 Holiday\n", "Print test 7");
+    }
+    {
+        istringstream is("Add 2017-01-01 Holiday\n"
+                         "Add 2017-03-08 Holiday\n"
+                         "Add 2017-01-01 New Year\n"
+                         "Find event != \"working day\"\n"
+                         "Add 2017-05-09 Holiday\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(), "2017-01-01 Holiday\n"
+                              "2017-01-01 New Year\n"
+                              "2017-03-08 Holiday\n"
+                              "Found 3 entries\n", "Find test 8");
+    }
+    {
+        istringstream is("Add 2017-01-01 New Year\n"
+                         "Add 2017-03-08 Holiday\n"
+                         "Add 2017-01-01 Holiday\n"
+                         "Last 2016-12-31\n"
+                         "Last 2017-01-01\n"
+                         "Last 2017-06-01\n"
+                         "Add 2017-05-09 Holiday\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(), "No entries\n"
+                              "2017-01-01 Holiday\n"
+                              "2017-03-08 Holiday\n", "Last test 9");
+    }
+    {
+        istringstream is("Add 2017-11-21 Tuesday\n"
+                         "Add 2017-11-20 Monday\n"
+                         "Add 2017-11-21 Weekly meeting\n"
+                         "Print\n"
+                         "Find event != \"Weekly meeting\"\n"
+                         "Last 2017-11-30\n"
+                         "Del date > 2017-11-20\n"
+                         "Last 2017-11-30\n"
+                         "Last 2017-11-01\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(), "2017-11-20 Monday\n"
+                              "2017-11-21 Tuesday\n"
+                              "2017-11-21 Weekly meeting\n"
+                              "2017-11-20 Monday\n"
+                              "2017-11-21 Tuesday\n"
+                              "Found 2 entries\n"
+                              "2017-11-21 Weekly meeting\n"
+                              "Removed 2 entries\n"
+                              "2017-11-20 Monday\n"
+                              "No entries\n", "All test");
     }
 }
