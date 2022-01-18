@@ -2,11 +2,6 @@
 
 void Database::Add(const Date &date, const std::string &event) {
     Record record(date, event);
-//    if (event == "e11") {
-//        cerr << "-----" << endl;
-//        cerr << record << endl;
-//        cerr << records_set.count(record) << endl;
-//    }
     if (records_set.insert(record).second) {
         records_map[date].push_back(record);
     }
@@ -23,43 +18,20 @@ void Database::Print(std::ostream &ostream) const {
 int Database::RemoveIf(const std::function<bool(Date, string)> &condition) {
     size_t counter = 0;
     for (auto record_map_it = records_map.begin(); record_map_it != records_map.end();) {
-        list<Record>& records_for_date = record_map_it->second;
-        for(auto it = records_for_date.begin();it != records_for_date.end();) {
-            if (condition(it->getDate(), it->getEvent())) {
-                int erased_count = records_set.erase(*it);
-                if (erased_count > 0) {
-                    it = records_for_date.erase(it);
-                    counter += erased_count;
-                } else {
-                    it++;
-                }
-            } else {
-                it++;
-            }
+        vector<Record>& records_for_date = record_map_it->second;
+        auto it_begin_false_condition = stable_partition(records_for_date.begin(), records_for_date.end(), [condition](const Record& r) {
+            return !condition(r.getDate(), r.getEvent());
+        });
+        for (auto it = it_begin_false_condition; it != records_for_date.end();it++) {
+            records_set.erase(*it);
+            counter++;
         }
-        if (records_for_date.empty()) {
+        if (distance(it_begin_false_condition, records_for_date.end()) == records_for_date.size()) {
             record_map_it = records_map.erase(record_map_it);
         } else {
+            records_for_date.erase(it_begin_false_condition, records_for_date.end());
             record_map_it++;
         }
-//        auto iter_for_removed = remove_if(records_for_date.begin(), records_for_date.end(), [condition](Record& record) {
-//           return condition(record.getDate(), record.getEvent());
-//        });
-//        if (iter_for_removed == records_for_date.end()) {
-//            record_map_it++;
-//            continue;
-//        }
-//        for(auto it = iter_for_removed;it != records_for_date.end();it++) {
-//            records_set.erase(*it);
-//        }
-//        size_t amount_elements_to_remove = distance(iter_for_removed, records_for_date.end());
-//        counter += amount_elements_to_remove;
-//        if (amount_elements_to_remove == records_for_date.size()) {
-//            record_map_it = records_map.erase(record_map_it);
-//        } else {
-//            records_for_date.erase(iter_for_removed, records_for_date.end());
-//            record_map_it++;
-//        }
     }
     return counter;
 }
@@ -79,7 +51,7 @@ Database::FindIf(const std::function<bool(Date, string)> &condition) const {
 
 const Record &Database::Last(const Date &date) const {
     const auto &up_bound = upper_bound(records_map.begin(), records_map.end(), date,
-                                       [](const Date &date_, const pair<Date, list<Record>> &pair_) {
+                                       [](const Date &date_, const pair<Date, vector<Record>> &pair_) {
                                            return date_ < pair_.first;
                                        });
     if (up_bound == records_map.begin()) {
@@ -115,10 +87,6 @@ bool Record::operator<(const Record &another_record) const {
         return date < another_record.getDate();
     }
 }
-
-//bool Record::operator>(const Record &another_record) const {
-//    return date > another_record.getDate();
-//}
 
 bool Record::operator!=(const Record &another_record) const {
     return !(*this == another_record);

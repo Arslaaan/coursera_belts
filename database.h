@@ -29,7 +29,7 @@ public:
 
 class Database {
     set<Record> records_set;
-    map<Date, list<Record>> records_map;
+    map<Date, vector<Record>> records_map;
 public:
     void Add(const Date &date, const std::string &event);
 

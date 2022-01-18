@@ -2,8 +2,7 @@
 
 std::string ParseEvent(std::istream &is) {
     std::string result;
+    is >> std::ws;
     getline(is, result);
-    std::stringstream ss(result);
-    getline(ss >> std::ws, result);
     return result;
 }
