@@ -230,11 +230,35 @@ void TestParseEvent() {
         vector<string> events;
         events.push_back(ParseEvent(is));
         events.push_back(ParseEvent(is));
-        AssertEqual(events, vector<string>{"first event  ", "second event"}, "Parse multiple events");
+        AssertEqual(events, vector<string>{"first event  ", "second event"}, "Parse multiple events 1");
+    }
+    {
+        istringstream is("  first   event  \n  second event");
+        vector<string> events;
+        events.push_back(ParseEvent(is));
+        events.push_back(ParseEvent(is));
+        AssertEqual(events, vector<string>{"first   event  ", "second event"}, "Parse multiple events 2");
     }
 }
 
 void TestTaskExamples() {
+    {
+        istringstream is("Add 2000-01-03 some event\n"
+                         "Add 2000-01-04 some  event\n"
+                         "Add 2000-01-03 holiday\n"
+                         "Add 2000-01-04 holiday\n"
+                         "Add 2000-01-05 holiday\n"
+                         "Add 2000-01-04 sport\n"
+                         "Del date < 2000-01-05 AND (event == \"holiday\" OR event == \"some event\")\n"
+                         "Print\n");
+        ostringstream os;
+        Database db;
+        commandHandler(db, is, os);
+        AssertEqual(os.str(), "Removed 3 entries\n"
+                              "2000-01-04 some  event\n"
+                              "2000-01-04 sport\n"
+                              "2000-01-05 holiday\n", "test quotes");
+    }
     {
         istringstream is("Add 0-2-3 Kolya\n"
                          "Add 0-2-3 Abc\n"

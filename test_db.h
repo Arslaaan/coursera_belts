@@ -1,24 +1,9 @@
+#include <sstream>
+
 #include "test_runner.h"
 #include "database.h"
 #include "condition_parser.h"
-#include <sstream>
 #include "node.h"
-
-#include <sstream>
-
-/*
-Вставить в main
-------------------------------------------------------
-  tr.RunTest(TestEmptyNode, "Тест 2 из Coursera");
-  tr.RunTest(TestDbAdd, "Тест 3(1) из Coursera");
-  tr.RunTest(TestDbFind, "Тест 3(2) из Coursera");
-  tr.RunTest(TestDbLast, "Тест 3(3) из Coursera");
-  tr.RunTest(TestDbRemoveIf, "Тест 3(4) из Coursera");
-  tr.RunTest(TestInsertionOrder, "Тест на порядок вывода");
-  tr.RunTest(TestsMyCustom, "Мои тесты");
-  tr.RunTest(TestDatabase, "Тест базы данных с GitHub");
- -------------------------------------------------------
- */
 
 using namespace std;
 
@@ -28,7 +13,7 @@ class AlwaysFalseNode : public Node {
     }
 };
 
-string ParseEvent(istream& is);
+//string ParseEvent(istream& is);
 
 int DoRemove (Database& db, const string& str) {
     istringstream is (str);
@@ -277,10 +262,10 @@ void TestsMyCustom()
         try
         {
             db.Last({2019, 11, 3});
+            AssertEqual(1,0,"Test no entries fail");
         }
         catch(invalid_argument&)
         {
-            cerr << "Тест на No entries OK" << endl;
         }
 
         AssertEqual(Record({2019, 12, 2}, "c c"), db.Last({2019, 12, 2}), " My test 7");
@@ -385,15 +370,19 @@ void TestDatabase() {
     {
         Database db;
         Date d(2019, 1, 1);
-        db.Add(d, "e1");
-        db.Add(d, "e2");
-        istringstream is(R"(event == "e1")");
+        db.Add(d, "e11");
+        db.Add(d, "e22");
+        istringstream is(R"(event == "e11")");
         auto condition = ParseCondition(is);
         auto predicate = [condition](const Date& date, const string& event) {
             return condition->Evaluate(date, event);
         };
+//        db.Print(cerr);
         AssertEqual(db.RemoveIf(predicate), 1, "Db Add2-Del-Add 1");
-        db.Add(d, "e1");
+        db.Add(d, "e11");
+//        cerr << "----" << endl;
+//        db.Print(cerr);
+//        cerr << db.FindIf(empty_predicate) << endl;
         AssertEqual(db.FindIf(empty_predicate).size(), 2, "Db Add2-Del-Add 2");
     }
 

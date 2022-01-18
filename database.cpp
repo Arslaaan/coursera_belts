@@ -1,73 +1,66 @@
 #include "database.h"
 
-#include <utility>
-
 void Database::Add(const Date &date, const std::string &event) {
     Record record(date, event);
-    if (!records_set.count(record)) {
-        records_set.insert(record);
+//    if (event == "e11") {
+//        cerr << "-----" << endl;
+//        cerr << record << endl;
+//        cerr << records_set.count(record) << endl;
+//    }
+    if (records_set.insert(record).second) {
         records_map[date].push_back(record);
     }
 }
 
 void Database::Print(std::ostream &ostream) const {
-//    ostream << "Print map" << endl;
     for (const auto &entry: records_map) {
         for (const auto &record: entry.second) {
             ostream << record << endl;
         }
     }
-//    ostream << "Print set" << endl;
-//    for (const auto& e: records_set) {
-//        ostream << e << endl;
-//    }
 }
 
 int Database::RemoveIf(const std::function<bool(Date, string)> &condition) {
     size_t counter = 0;
     for (auto record_map_it = records_map.begin(); record_map_it != records_map.end();) {
         list<Record>& records_for_date = record_map_it->second;
-        auto iter_for_removed = remove_if(records_for_date.begin(), records_for_date.end(), [condition](Record& record) {
-           return condition(record.getDate(), record.getEvent());
-        });
-        if (iter_for_removed == records_for_date.end()) {
-            record_map_it++;
-            continue;
+        for(auto it = records_for_date.begin();it != records_for_date.end();) {
+            if (condition(it->getDate(), it->getEvent())) {
+                int erased_count = records_set.erase(*it);
+                if (erased_count > 0) {
+                    it = records_for_date.erase(it);
+                    counter += erased_count;
+                } else {
+                    it++;
+                }
+            } else {
+                it++;
+            }
         }
-        // точно ли тут копия итератора?
-        for(auto it = iter_for_removed;it != records_for_date.end();it++) {
-            records_set.erase(*it);
-        }
-        size_t amount_elements_to_remove = distance(iter_for_removed, records_for_date.end());
-        counter += amount_elements_to_remove;
-        if (amount_elements_to_remove == records_for_date.size()) {
+        if (records_for_date.empty()) {
             record_map_it = records_map.erase(record_map_it);
         } else {
-            records_for_date.erase(iter_for_removed, records_for_date.end());
             record_map_it++;
         }
-    }
-//    for (auto record_it = records_set.begin(); record_it != records_set.end();) {
-//        const Record& record = *record_it;
-//        if (condition(record.getDate(), record.getEvent())) {
-//            counter++;
-//            list<Record> &list_for_date = records_map[record.getDate()];
-//            for (auto list_it = list_for_date.begin(); list_it != list_for_date.end();) {
-//                if (*list_it == record) {
-//                    list_it = list_for_date.erase(list_it);
-//                    break;
-//                } else {
-//                    list_it++;
-//                }
-//            }
-//            if (list_for_date.empty()) {
-//                records_map.erase(record.getDate());
-//            }
-//            record_it = records_set.erase(record_it);
-//        } else {
-//            record_it++;
+//        auto iter_for_removed = remove_if(records_for_date.begin(), records_for_date.end(), [condition](Record& record) {
+//           return condition(record.getDate(), record.getEvent());
+//        });
+//        if (iter_for_removed == records_for_date.end()) {
+//            record_map_it++;
+//            continue;
 //        }
-//    }
+//        for(auto it = iter_for_removed;it != records_for_date.end();it++) {
+//            records_set.erase(*it);
+//        }
+//        size_t amount_elements_to_remove = distance(iter_for_removed, records_for_date.end());
+//        counter += amount_elements_to_remove;
+//        if (amount_elements_to_remove == records_for_date.size()) {
+//            record_map_it = records_map.erase(record_map_it);
+//        } else {
+//            records_for_date.erase(iter_for_removed, records_for_date.end());
+//            record_map_it++;
+//        }
+    }
     return counter;
 }
 

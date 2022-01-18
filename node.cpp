@@ -1,7 +1,5 @@
 #include "node.h"
 
-#include <utility>
-
 DateComparisonNode::DateComparisonNode(const Comparison &comparison, const Date &date)
         : date_(date), comparison_(comparison) {};
 
