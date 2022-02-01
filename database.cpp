@@ -2,7 +2,7 @@
 
 void Database::Add(const Date &date, const std::string &event) {
     Record record(date, event);
-    if (records_set.insert(record).second) {
+    if (records_set[date].insert(record).second) {
         records_map[date].push_back(record);
     }
 }
@@ -22,15 +22,26 @@ int Database::RemoveIf(const std::function<bool(Date, string)> &condition) {
         auto it_begin_false_condition = stable_partition(records_for_date.begin(), records_for_date.end(), [condition](const Record& r) {
             return !condition(r.getDate(), r.getEvent());
         });
-        for (auto it = it_begin_false_condition; it != records_for_date.end();it++) {
-            records_set.erase(*it);
-            counter++;
-        }
-        if (distance(it_begin_false_condition, records_for_date.end()) == records_for_date.size()) {
-            record_map_it = records_map.erase(record_map_it);
-        } else {
-            records_for_date.erase(it_begin_false_condition, records_for_date.end());
+        if (it_begin_false_condition == records_for_date.end()) {
             record_map_it++;
+            continue;
+        } else {
+            auto it = prev(records_for_date.end());
+            while (1) {
+                records_set[record_map_it->first].erase(*it);
+                counter++;
+                if (it == it_begin_false_condition) {
+                    break;
+                }
+                --it;
+            }
+            records_for_date.erase(it_begin_false_condition, records_for_date.end());
+            if (records_for_date.empty()) {
+                record_map_it = records_map.erase(record_map_it);
+            } else {
+                records_for_date.erase(it_begin_false_condition, records_for_date.end());
+                record_map_it++;
+            }
         }
     }
     return counter;
@@ -57,8 +68,7 @@ const Record &Database::Last(const Date &date) const {
     if (up_bound == records_map.begin()) {
         throw invalid_argument("no elements before");
     }
-    const auto &last = prev(up_bound);
-    return last->second.back();
+    return prev(up_bound)->second.back();
 }
 
 ostream &operator<<(ostream &out, const pair<Date, string> &entity) {
@@ -81,10 +91,11 @@ bool Record::operator==(const Record &another_record) const {
 }
 
 bool Record::operator<(const Record &another_record) const {
-    if (date == another_record.getDate()) {
+    const Date& d_another = another_record.getDate();
+    if (date == d_another) {
         return event < another_record.getEvent();
     } else {
-        return date < another_record.getDate();
+        return date < d_another;
     }
 }
 
