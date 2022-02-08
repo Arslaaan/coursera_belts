@@ -1,4 +1,4 @@
-#include "test_runner.h"
+#include "../test_runner.h"
 
 using namespace std;
 
@@ -11,7 +11,7 @@ public:
         Resize(row_size, col_size);
     };
 
-    pair<size_t, size_t> Size() const {
+    [[nodiscard]] pair<size_t, size_t> Size() const {
         if (data.empty() || data.at(0).empty()) {
             return make_pair(0, 0);
         } else {
