@@ -26,9 +26,9 @@ public:
     }
     const T& operator[](const size_t index) const {
         if (index >= left.size()) {
-            return const_cast<T&>(as_const(right)[index - left.size()]);
+            return right[index - left.size()];
         } else {
-            return const_cast<T&>(as_const(left)[left.size() - 1 - index]);
+            return left[left.size() - 1 - index];
         }
     }
 
@@ -41,9 +41,9 @@ public:
     }
     const T& At(const size_t index) const {
         if (index >= left.size()) {
-            return const_cast<T&>(as_const(right).at(index - left.size()));
+            return right.at(index - left.size());
         } else {
-            return const_cast<T&>(as_const(left).at(index));
+            return left.at(left.size() - 1 - index);
         }
     }
 
@@ -55,9 +55,9 @@ public:
     }
     const T& Front() const {
         if (left.empty()) {
-            return const_cast<T&>(right.front());
+            return right.front();
         }
-        return const_cast<T&>(left.back());
+        return left.back();
     }
 
     T& Back() {
@@ -68,9 +68,9 @@ public:
     }
     const T& Back() const {
         if (right.empty()) {
-            return const_cast<T&>(left.front());
+            return left.front();
         }
-        return const_cast<T&>(right.back());
+        return right.back();
     }
 
     void PushBack(const T& v) {
