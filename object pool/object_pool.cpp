@@ -1,4 +1,4 @@
-#include "../test_runner.h"
+#include "test_runner.h"
 
 #include <algorithm>
 #include <iostream>
@@ -11,15 +11,45 @@ using namespace std;
 template <class T>
 class ObjectPool {
 public:
-    T* Allocate();
-    T* TryAllocate();
+    T* Allocate() {
+        if (poolDeallocated.empty()) {
+            T* ptr = new T;
+            poolAllocated.insert(ptr);
+            return ptr;
+        }
+        T* ptr = poolDeallocated.front();
+        poolDeallocated.pop_front();
+        poolAllocated.insert(ptr);
+        return ptr;
+    }
+    T* TryAllocate() {
+        if (poolDeallocated.empty()) {
+            return nullptr;
+        }
+        return Allocate();
+    }
 
-    void Deallocate(T* object);
+    void Deallocate(T* object) {
+        auto it = poolAllocated.find(object);
+        if (it == poolAllocated.end()) {
+            throw invalid_argument("");
+        }
+        poolAllocated.erase(it);
+        poolDeallocated.push_back(object);
+    }
 
-    ~ObjectPool();
+    ~ObjectPool() {
+        for (auto& object: poolAllocated) {
+            delete object;
+        }
+        for (auto& object: poolDeallocated) {
+            delete object;
+        }
+    }
 
 private:
-    // Добавьте сюда поля
+    set<T*> poolAllocated; // возможно не нужен
+    deque<T*> poolDeallocated;
 };
 
 void TestObjectPool() {
