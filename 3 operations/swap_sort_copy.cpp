@@ -5,13 +5,31 @@
 using namespace std;
 
 template <typename T>
-void Swap(T* first, T* second);
+void Swap(T* first, T* second) {
+    T value = *first;
+    *first = *second;
+    *second = value;
+}
 
 template <typename T>
-void SortPointers(vector<T*>& pointers);
+void SortPointers(vector<T*>& pointers) {
+    sort(pointers.begin(), pointers.end(), [](const T* ptr1, const T* ptr2) {
+        return *ptr1 < *ptr2;
+    });
+}
 
 template <typename T>
-void ReversedCopy(T* source, size_t count, T* destination);
+void ReversedCopy(T* source, size_t count, T* destination) {
+    T* tmpArray = new T[count];
+    for(size_t i = count; i > 0; --i) {
+        size_t k = i - 1;
+        tmpArray[count - i] = source[k];
+    }
+    for(size_t i = 0; i < count; ++i) {
+        destination[i] = tmpArray[i];
+    }
+    delete [] tmpArray;
+}
 
 void TestSwap() {
     int a = 1;
@@ -58,7 +76,7 @@ void TestReverseCopy() {
     const vector<int> expected1 = {7, 6, 5, 4, 3, 2, 1};
     ASSERT_EQUAL(vector<int>(dest, dest + count), expected1);
 
-    // РћР±Р»Р°СЃС‚Рё РїР°РјСЏС‚Рё РјРѕРіСѓС‚ РїРµСЂРµРєСЂС‹РІР°С‚СЊСЃСЏ
+    // Области памяти могут перекрываться
     ReversedCopy(source, count - 1, source + 1);
     const vector<int> expected2 = {1, 6, 5, 4, 3, 2, 1};
     ASSERT_EQUAL(vector<int>(source, source + count), expected2);
