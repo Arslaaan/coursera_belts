@@ -1,5 +1,5 @@
 #include "../test_runner.h"
-#include "../profiler.h"
+#include "../profile.h"
 
 #include <algorithm>
 #include <array>
@@ -14,34 +14,64 @@ template <typename TAirport>
 class AirportCounter {
 public:
     // конструктор по умолчанию: список элементов пока пуст
-    AirportCounter();
+    AirportCounter() {
+        fillDefaultAirports();
+    }
 
     // конструктор от диапазона элементов типа TAirport
     template <typename TIterator>
-    AirportCounter(TIterator begin, TIterator end);
+    AirportCounter(TIterator begin, TIterator end) {
+        fillDefaultAirports();
+        for (TIterator it = begin; it != end; ++it) {
+            Item& item = airports[static_cast<size_t>(*it)];
+            item.second++;
+        }
+    }
 
     // получить количество элементов, равных данному
-    size_t Get(TAirport airport) const;
+    [[nodiscard]] size_t Get(TAirport airport) const {
+        return airports[static_cast<size_t>(airport)].second;
+    }
 
     // добавить данный элемент
-    void Insert(TAirport airport);
+    void Insert(TAirport airport) {
+        airports[static_cast<size_t>(airport)].second++;
+    }
 
     // удалить одно вхождение данного элемента
-    void EraseOne(TAirport airport);
+    void EraseOne(TAirport airport) {
+        Item& item = airports[static_cast<size_t>(airport)];
+        if (item.second > 0) {
+            item.second--;
+        }
+    }
 
     // удалить все вхождения данного элемента
-    void EraseAll(TAirport airport);
+    void EraseAll(TAirport airport) {
+        Item& item = airports[static_cast<size_t>(airport)];
+        if (item.second > 0) {
+            item.second = 0;
+        }
+    }
 
     using Item = pair<TAirport, size_t>;
-    using Items = ???;
+    using Items = array<Item, static_cast<uint32_t>(TAirport::Last_)>;
 
     // получить некоторый объект, по которому можно проитерироваться,
     // получив набор объектов типа Item - пар (аэропорт, количество),
     // упорядоченных по аэропорту
-    Items GetItems() const;
+    [[nodiscard]] Items GetItems() const {
+        return airports;
+    }
 
 private:
-    // ???
+    Items airports;
+
+    void fillDefaultAirports() {
+        for(size_t i = 0;i < static_cast<uint32_t>(TAirport::Last_);++i) {
+            airports[i] = make_pair(static_cast<TAirport>(i), 0);
+        }
+    }
 };
 
 void TestMoscow() {

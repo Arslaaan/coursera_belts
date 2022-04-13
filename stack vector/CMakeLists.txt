@@ -7,7 +7,7 @@ include_directories(C:/Users/aochi/CLionProjects/coursera)
 add_executable(
         coursera
         ../test_runner.h
-        ../profiler.h
+        ../profile.h
         stack_vector.cpp
         stack_vector.h
 )

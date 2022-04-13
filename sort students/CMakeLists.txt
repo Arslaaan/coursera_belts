@@ -7,7 +7,7 @@ include_directories(C:/Users/aochi/CLionProjects/coursera)
 add_executable(
         coursera
         ../test_runner.h
-        ../profiler.h
+        ../profile.h
         student.h
         sort_students.cpp
 )
