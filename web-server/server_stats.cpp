@@ -84,6 +84,15 @@ void TestAbsentParts() {
 
 int main() {
   TestRunner tr;
+
+//  string_view s1 = "qwe";
+//  string_view s2 = "qwe";
+//
+//  set<string_view> set = {s1, s2, "zxc"};
+//  cout << set.count("qwe") << endl;
+//  cout << set.count("qwe") << endl;
+//  cout << set.count("zxc") << endl;
+//  cout << set.size() << endl;
   RUN_TEST(tr, TestBasic);
   RUN_TEST(tr, TestAbsentParts);
 }
